@@ -12,12 +12,12 @@
     <h1>MatchPoint</h1>
     <h2>Login</h2>
 
-    <form>
-      <input type="email" placeholder="Email" required><br>
+    <form onsubmit="login(); return false;">
+       <input type="email" placeholder="Email" required><br>
       <input type="password" placeholder="Password" required><br>
-
-      <button type="submit">Login</button>
+       <button type="submit">Login</button>
     </form>
+    <script src="app.js"></script>
 
     <p>
       Don’t have an account?
