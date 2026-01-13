@@ -32,7 +32,17 @@ function signup() {
 }
 
 function swipe(direction) {
-  console.log("Swiped:", direction, profiles[current]);
+  const profile = profiles[current];
+
+  const swipes = JSON.parse(localStorage.getItem("swipes")) || [];
+  swipes.push({
+    name: profile.name,
+    direction: direction
+  });
+
+  localStorage.setItem("swipes", JSON.stringify(swipes));
+
+  console.log("Saved swipes:", swipes);
 
   current++;
 
@@ -45,18 +55,21 @@ function swipe(direction) {
 }
 
 function loadProfile() {
-  document.getElementById("name").innerText =
-    profiles[current].name + ", " + profiles[current].age;
+  const profile = profiles[current];
 
-  document.getElementById("bio").innerText =
-    profiles[current].bio;
+  document.getElementById("profile-name").innerText =
+    `${profile.name}, ${profile.age}`;
 
-  document.getElementById("photo").src =
-    profiles[current].photo;
+  document.getElementById("profile-bio").innerText =
+    profile.bio;
 }
 
 window.onload = () => {
   if (document.getElementById("name")) {
     loadProfile();
   }
+}
+
+if (window.location.pathname.includes("swipe.html")) {
+  loadProfile();
 };
