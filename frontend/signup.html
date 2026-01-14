@@ -1,29 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>MatchPoint – Sign Up</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>MatchPoint – Welcome</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- AWS Amplify Library for Cognito -->
+    <script src="https://unpkg.com/aws-amplify@5/dist/aws-amplify.min.js"></script>
 </head>
-
 <body>
-  <div class="card">
-    <h1>MatchPoint</h1>
-    <h2>Sign Up</h2>
+    <div class="card">
+        <h1>MatchPoint</h1>
+        <h2>Welcome</h2>
+        <p>Click below to sign up or log in with your email or phone.</p>
+        <button onclick="redirectToCognito()">
+            Continue with Email or Phone
+        </button>
+    </div>
 
-   <form onsubmit="signup(); return false;">
-      <input type="text" placeholder="Name" required><br>
-      <input type="email" placeholder="Email" required><br>
-      <input type="password" placeholder="Password" required><br>
-        <button type="submit">Create Account</button>
-    </form>
-
-<script src="app.js"></script>
-
-    <p>
-      Already have an account?
-      <a href="login.html">Login</a>
-    </p>
-  </div>
+    <!-- Your main application logic -->
+    <script src="app.js"></script>
 </body>
 </html>
