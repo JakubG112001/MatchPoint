@@ -1,35 +1,37 @@
-const COGNITO_CONFIG = {
-    region: 'us-east-1',
-    userPoolId: 'us-east-1_xxxxxxxxx',
-    userPoolWebClientId: 'xxxxxxxxxxxxxxxxxxxxxxxxxx',
-    oauth: {
-        domain: 'your-domain.auth.us-east-1.amazoncognito.com',
-        scope: ['email', 'openid', 'profile', 'aws.cognito.signin.user.admin'],
-        redirectSignIn: 'http://localhost:5500/frontend/',
-        redirectSignOut: 'http://localhost:5500/frontend/',
-        responseType: 'code'
-    }
-};
+if (typeof Amplify !== 'undefined') {
+    Amplify.configure({
+        Auth: window.COGNITO_CONFIG 
+    });
+}
 
-Amplify.configure({
-    Auth: COGNITO_CONFIG
-});
+
 
 function redirectToCognito() {
-    const clientId = COGNITO_CONFIG.userPoolWebClientId;
-    const domain = COGNITO_CONFIG.oauth.domain;
-    const redirectUri = encodeURIComponent(COGNITO_CONFIG.oauth.redirectSignIn);
+    const config = window.COGNITO_CONFIG;
+    const clientId = config.userPoolWebClientId;
+    const domain = config.oauth.domain;
+    const redirectUri = encodeURIComponent(config.oauth.redirectSignIn);
     const cognitoUrl = `https://${domain}/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}`;
+    
+    console.log('Attempting redirect to:', cognitoUrl);
     window.location.href = cognitoUrl;
 }
 
 async function handleAuthRedirect() {
+    if (typeof Amplify === 'undefined') {
+        console.log('Amplify not loaded, skipping auth');
+        return false;
+    }
     try {
         const urlParams = new URLSearchParams(window.location.search);
         const authCode = urlParams.get('code');
 
         if (authCode) {
-            console.log('Processing redirect from Cognito...');
+            console.log('Processing redirect from Cognito with code:', authCode);
+            
+            await Amplify.Auth.currentSession();
+            
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
 
         const user = await Amplify.Auth.currentAuthenticatedUser();
@@ -42,12 +44,22 @@ async function handleAuthRedirect() {
         }
         return true;
     } catch (error) {
-        console.log('User not authenticated:', error.message);
+        console.log('Authentication error:', error.message);
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const authCode = urlParams.get('code');
+        
+        if (authCode) {
+            console.log('Failed to exchange code, redirecting to signup');
+            window.location.href = 'signup.html';
+        }
+        
         return false;
     }
 }
 
 async function logout() {
+    if (typeof Amplify === 'undefined') return;
     try {
         await Amplify.Auth.signOut();
         window.location.href = 'signup.html';
@@ -106,33 +118,68 @@ function loadProfile() {
     if (current >= profiles.length) return;
     
     const profile = profiles[current];
+
+    const nameElement = document.getElementById("profile-name");
+    const bioElement = document.getElementById("profile-bio");
+    const imgElement = document.getElementById("profile-img");
     
-    if (document.getElementById("profile-name")) {
-        document.getElementById("profile-name").innerText = `${profile.name}, ${profile.age}`;
-        document.getElementById("profile-bio").innerText = profile.bio;
+    console.log('Elements found:', {
+        nameElement: !!nameElement,
+        bioElement: !!bioElement,
+        imgElement: !!imgElement
+    });
+    
+    if (nameElement) {
+        nameElement.innerText = `${profile.name}, ${profile.age}`;
+        console.log('Set name to:', `${profile.name}, ${profile.age}`);
+    } else {
+        console.error('nameElement not found!');
+    }
+    
+    if (bioElement) {
+        bioElement.innerText = profile.bio;
+        console.log('Set bio to:', profile.bio);
+    } else {
+        console.error('bioElement not found!');
+    }
+    
+    if (imgElement) {
+        imgElement.src = profile.photo;
+        console.log('Set image to:', profile.photo);
+    } else {
+        console.error('imgElement not found!');
     }
 }
 
 async function initializePage() {
+    console.log('initializePage started');
+    console.log('Current path:', window.location.pathname);
+    
     const isAuthenticated = await handleAuthRedirect();
+    console.log('Authentication result:', isAuthenticated);
     
     if (window.location.pathname.includes('swipe.html')) {
-        if (!isAuthenticated) {
-            window.location.href = 'signup.html';
-            return;
-        }
+        console.log('On swipe.html page');
         
-        loadProfile();
+        console.log('Loading profile (authentication check skipped for testing)...');
+        setTimeout(() => loadProfile(), 100);
         
         if (!document.getElementById('logout-btn')) {
+            console.log('Adding logout button');
             const logoutBtn = document.createElement('button');
             logoutBtn.id = 'logout-btn';
             logoutBtn.textContent = 'Logout';
             logoutBtn.onclick = logout;
-            logoutBtn.style.cssText = 'position: fixed; top: 10px; right: 10px; padding: 5px 10px;';
+            logoutBtn.style.cssText = 'position: fixed; top: 10px; right: 10px; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 5px;';
             document.body.appendChild(logoutBtn);
         }
     }
+    
+    if (window.location.pathname.includes('index.html') && isAuthenticated) {
+        console.log('User is authenticated on index page');
+    }
+    
+    console.log('initializePage completed');
 }
 
 window.addEventListener('DOMContentLoaded', initializePage);
