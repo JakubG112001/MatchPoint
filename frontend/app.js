@@ -68,104 +68,182 @@ async function logout() {
     }
 }
 
-const profiles = [
-    {
-        name: "Alex",
-        age: 24,
-        bio: "Loves gym, tech, and late-night food.",
-        photo: "https://via.placeholder.com/300x300"
-    },
-    {
-        name: "Sam",
-        age: 27,
-        bio: "Coffee addict and night owl.",
-        photo: "https://via.placeholder.com/300x300"
-    },
-    {
-        name: "Jamie",
-        age: 22,
-        bio: "Into hiking and photography.",
-        photo: "https://via.placeholder.com/300x300"
+function saveProfile() {
+    const name = document.getElementById('name').value;
+    const age = document.getElementById('age').value;
+    const bio = document.getElementById('bio').value;
+    const photoInput = document.getElementById('photo');
+    
+    if (!name || !age || !bio) {
+        alert('Please fill all fields');
+        return;
     }
-];
+    
+    const currentUser = getCurrentUserId();
+    const profile = { id: currentUser, name, age, bio, photo: 'https://via.placeholder.com/300' };
+    
+    if (photoInput && photoInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            profile.photo = e.target.result;
+            saveProfileData(profile);
+        };
+        reader.readAsDataURL(photoInput.files[0]);
+    } else {
+        saveProfileData(profile);
+    }
+}
 
+function saveProfileData(profile) {
+    const profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+    const existing = profiles.findIndex(p => p.id === profile.id);
+    
+    if (existing >= 0) profiles[existing] = profile;
+    else profiles.push(profile);
+    
+    localStorage.setItem('profiles', JSON.stringify(profiles));
+    alert('Profile saved!');
+    window.location.href = 'swipe.html';
+}
+
+function getCurrentUserId() {
+    let userId = localStorage.getItem('currentUserId');
+    if (!userId) {
+        userId = 'user_' + Date.now();
+        localStorage.setItem('currentUserId', userId);
+    }
+    return userId;
+}
+
+let profiles = [];
 let current = 0;
 
 function swipe(direction) {
     const profile = profiles[current];
-    const swipes = JSON.parse(localStorage.getItem("swipes")) || [];
+    const currentUser = getCurrentUserId();
+    const swipes = JSON.parse(localStorage.getItem('swipes')) || {};
     
-    swipes.push({
-        name: profile.name,
+    if (!swipes[currentUser]) swipes[currentUser] = [];
+    
+    swipes[currentUser].push({
+        targetId: profile.id,
         direction: direction,
         timestamp: new Date().toISOString()
     });
     
-    localStorage.setItem("swipes", JSON.stringify(swipes));
-    console.log("Saved swipes:", swipes);
+    localStorage.setItem('swipes', JSON.stringify(swipes));
+    
+    if (direction === 'right') {
+        checkMatch(profile.id);
+    }
     
     current++;
     
     if (current >= profiles.length) {
-        alert("No more profiles!");
+        alert('No more profiles!');
         current = 0;
     }
     
     loadProfile();
 }
 
-function loadProfile() {
-    if (current >= profiles.length) return;
+function checkMatch(targetId) {
+    const currentUser = getCurrentUserId();
+    const swipes = JSON.parse(localStorage.getItem('swipes')) || {};
     
-    const profile = profiles[current];
-
-    const nameElement = document.getElementById("profile-name");
-    const bioElement = document.getElementById("profile-bio");
-    const imgElement = document.getElementById("profile-img");
+    const mySwipes = swipes[currentUser] || [];
+    const theirSwipes = swipes[targetId] || [];
     
-    console.log('Elements found:', {
-        nameElement: !!nameElement,
-        bioElement: !!bioElement,
-        imgElement: !!imgElement
-    });
+    const iLikedThem = mySwipes.some(s => s.targetId === targetId && s.direction === 'right');
+    const theyLikedMe = theirSwipes.some(s => s.targetId === currentUser && s.direction === 'right');
     
-    if (nameElement) {
-        nameElement.innerText = `${profile.name}, ${profile.age}`;
-        console.log('Set name to:', `${profile.name}, ${profile.age}`);
-    } else {
-        console.error('nameElement not found!');
-    }
-    
-    if (bioElement) {
-        bioElement.innerText = profile.bio;
-        console.log('Set bio to:', profile.bio);
-    } else {
-        console.error('bioElement not found!');
-    }
-    
-    if (imgElement) {
-        imgElement.src = profile.photo;
-        console.log('Set image to:', profile.photo);
-    } else {
-        console.error('imgElement not found!');
+    if (iLikedThem && theyLikedMe) {
+        const matches = JSON.parse(localStorage.getItem('matches')) || [];
+        if (!matches.some(m => (m.user1 === currentUser && m.user2 === targetId) || (m.user1 === targetId && m.user2 === currentUser))) {
+            matches.push({ user1: currentUser, user2: targetId, timestamp: new Date().toISOString() });
+            localStorage.setItem('matches', JSON.stringify(matches));
+            alert('🎉 It\'s a match!');
+        }
     }
 }
 
-async function initializePage() {
-    console.log('initializePage started');
-    console.log('Current path:', window.location.pathname);
+function loadProfile() {
+    if (current >= profiles.length) {
+        document.querySelector('.card').innerHTML = '<h2>No more profiles</h2><p>Check back later!</p>';
+        return;
+    }
     
+    const profile = profiles[current];
+    const nameElement = document.getElementById('profile-name');
+    const bioElement = document.getElementById('profile-bio');
+    const imgElement = document.getElementById('profile-img');
+    
+    if (nameElement) nameElement.innerText = `${profile.name}, ${profile.age}`;
+    if (bioElement) bioElement.innerText = profile.bio;
+    if (imgElement) imgElement.src = profile.photo;
+}
+
+function loadProfiles() {
+    const currentUser = getCurrentUserId();
+    const allProfiles = JSON.parse(localStorage.getItem('profiles')) || [];
+    const swipes = JSON.parse(localStorage.getItem('swipes')) || {};
+    const mySwipes = swipes[currentUser] || [];
+    
+    profiles = allProfiles.filter(p => {
+        if (p.id === currentUser) return false;
+        return !mySwipes.some(s => s.targetId === p.id);
+    });
+    
+    current = 0;
+    loadProfile();
+}
+
+function loadMatches() {
+    const currentUser = getCurrentUserId();
+    const matches = JSON.parse(localStorage.getItem('matches')) || [];
+    const allProfiles = JSON.parse(localStorage.getItem('profiles')) || [];
+    const container = document.getElementById('matches-container');
+    
+    if (!container) return;
+    
+    const myMatches = matches.filter(m => m.user1 === currentUser || m.user2 === currentUser);
+    
+    if (myMatches.length === 0) {
+        container.innerHTML = '<p>No matches yet. Keep swiping!</p>';
+        return;
+    }
+    
+    container.innerHTML = myMatches.map(match => {
+        const matchedUserId = match.user1 === currentUser ? match.user2 : match.user1;
+        const matchedProfile = allProfiles.find(p => p.id === matchedUserId);
+        if (!matchedProfile) return '';
+        return `
+            <div class="match-card">
+                <img src="${matchedProfile.photo}" alt="${matchedProfile.name}">
+                <h3>${matchedProfile.name}, ${matchedProfile.age}</h3>
+                <p>${matchedProfile.bio}</p>
+            </div>
+        `;
+    }).join('');
+}
+
+async function initializePage() {
     const isAuthenticated = await handleAuthRedirect();
-    console.log('Authentication result:', isAuthenticated);
     
     if (window.location.pathname.includes('swipe.html')) {
-        console.log('On swipe.html page');
+        const currentUser = getCurrentUserId();
+        const allProfiles = JSON.parse(localStorage.getItem('profiles')) || [];
+        const userProfile = allProfiles.find(p => p.id === currentUser);
         
-        console.log('Loading profile (authentication check skipped for testing)...');
-        setTimeout(() => loadProfile(), 100);
+        if (!userProfile) {
+            alert('Please create your profile first!');
+            window.location.href = 'profile.html';
+            return;
+        }
+        
+        loadProfiles();
         
         if (!document.getElementById('logout-btn')) {
-            console.log('Adding logout button');
             const logoutBtn = document.createElement('button');
             logoutBtn.id = 'logout-btn';
             logoutBtn.textContent = 'Logout';
@@ -175,11 +253,9 @@ async function initializePage() {
         }
     }
     
-    if (window.location.pathname.includes('index.html') && isAuthenticated) {
-        console.log('User is authenticated on index page');
+    if (window.location.pathname.includes('matches.html')) {
+        loadMatches();
     }
-    
-    console.log('initializePage completed');
 }
 
 window.addEventListener('DOMContentLoaded', initializePage);
