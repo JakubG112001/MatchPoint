@@ -184,15 +184,10 @@ function loadProfile() {
 }
 
 function loadProfiles() {
-    const currentUser = getCurrentUserId();
     const allProfiles = JSON.parse(localStorage.getItem('profiles')) || [];
-    const swipes = JSON.parse(localStorage.getItem('swipes')) || {};
-    const mySwipes = swipes[currentUser] || [];
     
-    profiles = allProfiles.filter(p => {
-        if (p.id === currentUser) return false;
-        return !mySwipes.some(s => s.targetId === p.id);
-    });
+    // Show all profiles alphabetically
+    profiles = allProfiles.sort((a, b) => a.name.localeCompare(b.name));
     
     current = 0;
     loadProfile();
@@ -231,16 +226,6 @@ async function initializePage() {
     const isAuthenticated = await handleAuthRedirect();
     
     if (window.location.pathname.includes('swipe.html')) {
-        const currentUser = getCurrentUserId();
-        const allProfiles = JSON.parse(localStorage.getItem('profiles')) || [];
-        const userProfile = allProfiles.find(p => p.id === currentUser);
-        
-        if (!userProfile) {
-            alert('Please create your profile first!');
-            window.location.href = 'profile.html';
-            return;
-        }
-        
         loadProfiles();
         
         if (!document.getElementById('logout-btn')) {
