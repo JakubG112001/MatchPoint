@@ -1,1 +1,37 @@
+# AWS Credentials & Config
 frontend/config.js
+*.pem
+*.key
+.aws/
+
+# Terraform State & Secrets
+infrastructure/.terraform/
+infrastructure/terraform.tfstate*
+infrastructure/.terraform.lock.hcl
+infrastructure/bucket-policy.json
+infrastructure/*.zip
+
+# Environment Variables
+.env
+.env.local
+.env.production
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+
+# Temporary Files
+*.tmp
+*.temp
+add_fake_profiles.py

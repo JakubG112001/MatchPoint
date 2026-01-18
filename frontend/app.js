@@ -106,13 +106,19 @@ function saveProfileData(profile) {
     window.location.href = 'swipe.html';
 }
 
-function getCurrentUserId() {
-    let userId = localStorage.getItem('currentUserId');
-    if (!userId) {
-        userId = 'user_' + Date.now();
-        localStorage.setItem('currentUserId', userId);
+async function getCurrentUserId() {
+    try {
+        const user = await Amplify.Auth.currentAuthenticatedUser();
+        return user.username;
+    } catch {
+        // Fallback for local testing
+        let userId = localStorage.getItem('currentUserId');
+        if (!userId) {
+            userId = 'user_' + Date.now();
+            localStorage.setItem('currentUserId', userId);
+        }
+        return userId;
     }
-    return userId;
 }
 
 let profiles = [];
@@ -183,14 +189,23 @@ function loadProfile() {
     if (imgElement) imgElement.src = profile.photo;
 }
 
+const API_BASE_URL = 'https://45kvervq65.execute-api.us-east-1.amazonaws.com/prod';
+
 function loadProfiles() {
-    const allProfiles = JSON.parse(localStorage.getItem('profiles')) || [];
-    
-    // Show all profiles alphabetically
-    profiles = allProfiles.sort((a, b) => a.name.localeCompare(b.name));
-    
-    current = 0;
-    loadProfile();
+    fetch(`${API_BASE_URL}/profiles`)
+        .then(response => response.json())
+        .then(data => {
+            profiles = data || [];
+            console.log('Loaded profiles from API:', profiles);
+            current = 0;
+            loadProfile();
+        })
+        .catch(error => {
+            console.error('Error loading profiles:', error);
+            profiles = [];
+            current = 0;
+            loadProfile();
+        });
 }
 
 function loadMatches() {
