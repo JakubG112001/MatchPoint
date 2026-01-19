@@ -4,10 +4,9 @@ frontend/config.js
 *.key
 .aws/
 
-# Terraform State & Secrets
+# Terraform State & Secrets (but keep main.tf and .terraform.lock.hcl)
 infrastructure/.terraform/
 infrastructure/terraform.tfstate*
-infrastructure/.terraform.lock.hcl
 infrastructure/bucket-policy.json
 infrastructure/*.zip
 
