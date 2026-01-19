@@ -59,12 +59,18 @@ async function handleAuthRedirect() {
 }
 
 async function logout() {
-    if (typeof Amplify === 'undefined') return;
+    console.log('Logout function called');
     try {
-        await Amplify.Auth.signOut();
+        if (typeof Amplify !== 'undefined') {
+            console.log('Signing out with Amplify');
+            await Amplify.Auth.signOut();
+        }
+        console.log('Redirecting to signup page');
         window.location.href = 'signup.html';
     } catch (error) {
         console.error('Logout error:', error);
+        // Force redirect even if logout fails
+        window.location.href = 'signup.html';
     }
 }
 
@@ -238,19 +244,34 @@ function loadMatches() {
 }
 
 async function initializePage() {
+    console.log('initializePage called on:', window.location.pathname);
+    
     const isAuthenticated = await handleAuthRedirect();
+    console.log('Authentication result:', isAuthenticated);
+    
+    // Force logout button creation on all pages except signup
+    if (!window.location.pathname.includes('signup.html')) {
+        console.log('Adding logout button...');
+        
+        // Remove existing button if any
+        const existingBtn = document.getElementById('logout-btn');
+        if (existingBtn) existingBtn.remove();
+        
+        const logoutBtn = document.createElement('button');
+        logoutBtn.id = 'logout-btn';
+        logoutBtn.textContent = 'Logout';
+        logoutBtn.onclick = async () => {
+            console.log('Logout clicked');
+            await logout();
+        };
+        logoutBtn.style.cssText = 'position: fixed; top: 10px; right: 10px; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 5px; cursor: pointer; z-index: 1000;';
+        document.body.appendChild(logoutBtn);
+        console.log('Logout button added');
+    }
     
     if (window.location.pathname.includes('swipe.html')) {
+        console.log('Loading profiles...');
         loadProfiles();
-        
-        if (!document.getElementById('logout-btn')) {
-            const logoutBtn = document.createElement('button');
-            logoutBtn.id = 'logout-btn';
-            logoutBtn.textContent = 'Logout';
-            logoutBtn.onclick = logout;
-            logoutBtn.style.cssText = 'position: fixed; top: 10px; right: 10px; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 5px;';
-            document.body.appendChild(logoutBtn);
-        }
     }
     
     if (window.location.pathname.includes('matches.html')) {
