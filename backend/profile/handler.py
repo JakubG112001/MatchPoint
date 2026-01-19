@@ -1,9 +1,15 @@
 import json
 import boto3
 from boto3.dynamodb.conditions import Key
+from decimal import Decimal
 
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table('MatchPointProfiles')
+
+def decimal_default(obj):
+    if isinstance(obj, Decimal):
+        return int(obj)
+    raise TypeError
 
 def lambda_handler(event, context):
     method = event['httpMethod']
@@ -35,5 +41,5 @@ def lambda_handler(event, context):
         return {
             'statusCode': 200,
             'headers': {'Access-Control-Allow-Origin': '*'},
-            'body': json.dumps(profiles)
+            'body': json.dumps(profiles, default=decimal_default)
         }
