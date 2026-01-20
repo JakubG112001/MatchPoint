@@ -132,31 +132,45 @@ let current = 0;
 
 function swipe(direction) {
     const profile = profiles[current];
-    const currentUser = getCurrentUserId();
-    const swipes = JSON.parse(localStorage.getItem('swipes')) || {};
+    const card = document.querySelector('.card');
     
-    if (!swipes[currentUser]) swipes[currentUser] = [];
-    
-    swipes[currentUser].push({
-        targetId: profile.id,
-        direction: direction,
-        timestamp: new Date().toISOString()
-    });
-    
-    localStorage.setItem('swipes', JSON.stringify(swipes));
-    
-    if (direction === 'right') {
-        checkMatch(profile.id);
+    // Add swipe animation
+    if (direction === 'left') {
+        card.classList.add('swipe-left');
+    } else {
+        card.classList.add('swipe-right');
     }
     
-    current++;
-    
-    if (current >= profiles.length) {
-        alert('No more profiles!');
-        current = 0;
-    }
-    
-    loadProfile();
+    // Wait for animation to complete before loading next profile
+    setTimeout(() => {
+        const currentUser = getCurrentUserId();
+        const swipes = JSON.parse(localStorage.getItem('swipes')) || {};
+        
+        if (!swipes[currentUser]) swipes[currentUser] = [];
+        
+        swipes[currentUser].push({
+            targetId: profile.id || profile.userId,
+            direction: direction,
+            timestamp: new Date().toISOString()
+        });
+        
+        localStorage.setItem('swipes', JSON.stringify(swipes));
+        
+        if (direction === 'right') {
+            checkMatch(profile.id || profile.userId);
+        }
+        
+        current++;
+        
+        // Remove animation classes
+        card.classList.remove('swipe-left', 'swipe-right');
+        
+        if (current >= profiles.length) {
+            card.innerHTML = '<h2 class="no-profiles">No more profiles!</h2><p>Check back later for more matches.</p>';
+        } else {
+            loadProfile();
+        }
+    }, 600); // Match animation duration
 }
 
 function checkMatch(targetId) {

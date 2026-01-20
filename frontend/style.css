@@ -1,41 +1,214 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  background: #f5f5f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
   text-align: center;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 3rem;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
-.container, .card {
-  background: white;
-  padding: 20px;
-  margin: 50px auto;
-  width: 300px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+h1 {
+  font-size: 3rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
 }
 
-button {
-  padding: 10px;
-  margin: 10px;
-  width: 100px;
-  cursor: pointer;
+p {
+  color: #666;
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
 }
 
 .actions {
   display: flex;
-  justify-content: space-between;
+  gap: 1rem;
+  justify-content: center;
 }
 
-.like {
-  background: #4CAF50;
+button {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.actions button {
+  background: linear-gradient(45deg, #667eea, #764ba2);
   color: white;
+  min-width: 120px;
+}
+
+.actions button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* Swipe Page Styles */
+.card {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  transition: all 0.3s ease;
+  transform-origin: center;
+  margin: 2rem auto;
+}
+
+.card.swipe-left {
+  animation: swipeLeft 0.6s ease-out forwards;
+}
+
+.card.swipe-right {
+  animation: swipeRight 0.6s ease-out forwards;
+}
+
+@keyframes swipeLeft {
+  0% {
+    transform: translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-100vw) rotate(-30deg);
+    opacity: 0;
+  }
+}
+
+@keyframes swipeRight {
+  0% {
+    transform: translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100vw) rotate(30deg);
+    opacity: 0;
+  }
+}
+
+.card img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 15px;
+  margin-bottom: 1.5rem;
+}
+
+.card h2 {
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.card p {
+  color: #666;
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 2rem;
+}
+
+.card .actions {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.dislike, .like {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .dislike {
-  background: #f44336;
+  background: linear-gradient(45deg, #ff6b6b, #ee5a52);
   color: white;
 }
 
-img {
-  width: 100%;
-  border-radius: 10px;
+.like {
+  background: linear-gradient(45deg, #51cf66, #40c057);
+  color: white;
+}
+
+.dislike:hover {
+  transform: scale(1.1);
+  box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+}
+
+.like:hover {
+  transform: scale(1.1);
+  box-shadow: 0 10px 20px rgba(81, 207, 102, 0.3);
+}
+
+.dislike:active {
+  transform: scale(0.95);
+}
+
+.like:active {
+  transform: scale(0.95);
+}
+
+/* Logout Button */
+#logout-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+}
+
+#logout-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    margin: 1rem;
+    padding: 2rem;
+  }
+  
+  .card {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
 }
