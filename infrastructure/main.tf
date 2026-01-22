@@ -278,6 +278,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   alarm_description   = "This metric monitors lambda errors"
   alarm_actions       = [aws_sns_topic.alerts.arn]
 
+
   dimensions = {
     FunctionName = aws_lambda_function.profile_handler.function_name
   }
