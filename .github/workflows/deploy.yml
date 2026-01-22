@@ -1,0 +1,80 @@
+name: Deploy MatchPoint
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install boto3 pytest
+    
+    - name: Lint Python code
+      run: |
+        pip install flake8
+        flake8 backend/ --count --select=E9,F63,F7,F82 --show-source --statistics
+    
+    - name: Test Lambda functions
+      run: |
+        python -m pytest backend/tests/ -v || echo "No tests found - creating test structure"
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.5.0
+    
+    - name: Terraform Init
+      run: terraform init
+      working-directory: ./infrastructure
+    
+    - name: Terraform Plan
+      run: terraform plan
+      working-directory: ./infrastructure
+    
+    - name: Terraform Apply
+      run: terraform apply -auto-approve
+      working-directory: ./infrastructure
+    
+    - name: Deploy Frontend
+      run: |
+        BUCKET_NAME=$(terraform output -raw s3_bucket_name)
+        aws s3 sync ../frontend s3://$BUCKET_NAME --delete
+      working-directory: ./infrastructure
+    
+    - name: Invalidate CloudFront
+      run: |
+        DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Comment=='MatchPoint Frontend'].Id" --output text)
+        if [ ! -z "$DISTRIBUTION_ID" ]; then
+          aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+        fi

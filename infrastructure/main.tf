@@ -265,6 +265,130 @@ output "cloudfront_url" {
   value = aws_cloudfront_distribution.frontend.domain_name
 }
 
+# CloudWatch Alarms for Production Monitoring
+resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
+  alarm_name          = "matchpoint-lambda-errors"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "Errors"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "5"
+  alarm_description   = "This metric monitors lambda errors"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+
+  dimensions = {
+    FunctionName = aws_lambda_function.profile_handler.function_name
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "lambda_duration" {
+  alarm_name          = "matchpoint-lambda-duration"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "Duration"
+  namespace           = "AWS/Lambda"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "10000"
+  alarm_description   = "This metric monitors lambda duration"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+
+  dimensions = {
+    FunctionName = aws_lambda_function.profile_handler.function_name
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "dynamodb_throttles" {
+  alarm_name          = "matchpoint-dynamodb-throttles"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "ThrottledRequests"
+  namespace           = "AWS/DynamoDB"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "0"
+  alarm_description   = "This metric monitors DynamoDB throttling"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+
+  dimensions = {
+    TableName = aws_dynamodb_table.profiles.name
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "api_gateway_4xx" {
+  alarm_name          = "matchpoint-api-4xx-errors"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "4XXError"
+  namespace           = "AWS/ApiGateway"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "10"
+  alarm_description   = "This metric monitors API Gateway 4xx errors"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+
+  dimensions = {
+    ApiName = aws_api_gateway_rest_api.matchpoint_api.name
+  }
+}
+
+# SNS Topic for Alerts
+resource "aws_sns_topic" "alerts" {
+  name = "matchpoint-alerts"
+}
+
+# CloudWatch Dashboard
+resource "aws_cloudwatch_dashboard" "matchpoint" {
+  dashboard_name = "MatchPoint-Monitoring"
+
+  dashboard_body = jsonencode({
+    widgets = [
+      {
+        type   = "metric"
+        x      = 0
+        y      = 0
+        width  = 12
+        height = 6
+
+        properties = {
+          metrics = [
+            ["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.profile_handler.function_name],
+            [".", "Errors", ".", "."],
+            [".", "Duration", ".", "."]
+          ]
+          view    = "timeSeries"
+          stacked = false
+          region  = "us-east-1"
+          title   = "Lambda Metrics"
+          period  = 300
+        }
+      },
+      {
+        type   = "metric"
+        x      = 0
+        y      = 6
+        width  = 12
+        height = 6
+
+        properties = {
+          metrics = [
+            ["AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", aws_dynamodb_table.profiles.name],
+            [".", "ConsumedWriteCapacityUnits", ".", "."],
+            [".", "ThrottledRequests", ".", "."]
+          ]
+          view    = "timeSeries"
+          stacked = false
+          region  = "us-east-1"
+          title   = "DynamoDB Metrics"
+          period  = 300
+        }
+      }
+    ]
+  })
+}
+
 resource "random_string" "bucket_suffix" {
   length  = 8
   special = false
